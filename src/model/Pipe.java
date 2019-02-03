@@ -106,4 +106,14 @@ public class Pipe {
         g.setColor(Color.green.darker());
         g.fillRect(x, distToSecond, pipeWidth, windowHeight - distToSecond - 100);
     }
+
+    public boolean glidePipe(Bird bird) {
+        int by = bird.getY();
+        int bx = bird.getX();
+
+        boolean bottomPipe = by + bird.getHeight() >= y + pipeGap && by <= y + pipeGap;
+        boolean xLocation = bx <= x + pipeWidth && bx >= x;
+
+        return xLocation && bottomPipe;
+    }
 }

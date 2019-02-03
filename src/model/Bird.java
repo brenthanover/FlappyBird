@@ -40,6 +40,7 @@ public class Bird {
     private final int jumpSpeed = 12;
     private final int terminalVelocity = 15;
 
+
     /**
      *  Variables
      */
@@ -82,7 +83,7 @@ public class Bird {
     }
 
     public void drawBird(Graphics g) {
-        g.drawImage(birdHorizImage, x, y, null);
+        g.drawImage(image, x, y, null);
     }
 
     // MODIFIES: this
@@ -94,16 +95,16 @@ public class Bird {
 
     // EFFECTS: produces true when bird touching ground
     public boolean hitGround() {
-        int windowHeight = FlappyBird.flappyBird.getWindowHeight();
         int floorHeight = FlappyBird.flappyBird.getFloorHeight();
+        int windowHeight = FlappyBird.flappyBird.getWindowHeight();
         return y >= windowHeight - floorHeight - birdHeight;
     }
 
     // MODIFIES: this
     // EFFECTS: changes positive downward velocity into negative upward velocity
     public void birdDies() {
-        int windowHeight = FlappyBird.flappyBird.getWindowHeight();
         int floorHeight = FlappyBird.flappyBird.getFloorHeight();
+        int windowHeight = FlappyBird.flappyBird.getWindowHeight();
         y = windowHeight - floorHeight - birdHeight;
     }
 
