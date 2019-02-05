@@ -3,7 +3,6 @@ package model;
 import ui.FlappyBird;
 
 import java.awt.*;
-import java.util.Random;
 
 public class Pipe {
 
@@ -12,11 +11,8 @@ public class Pipe {
      */
     private final int pipeWidth = 60;
     private final int pipeGap = 120;
-    private final int pipeMinHeight = 350;
-    private final int pipeMaxHeight = 0;
     private final int scrollSpeed = 5;
     int windowHeight = FlappyBird.flappyBird.getWindowHeight();
-    int windowWidth = FlappyBird.flappyBird.getWindowWidth();
 
     /**
      *  Variables
@@ -28,15 +24,13 @@ public class Pipe {
      *  Declarations
      */
     public static Pipe pipe;
-    Random rand;
 
     /**
      *  Constructor
      */
-    public Pipe() {
-        rand = new Random();
-        x = windowWidth;
-        y = rand.nextInt(windowHeight - pipeMinHeight) + pipeMaxHeight;
+    public Pipe(int x, int y) {
+        this.x = x;
+        this.y = y;
     }
 
     /**

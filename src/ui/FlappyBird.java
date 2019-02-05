@@ -12,6 +12,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
+import java.util.Random;
+
+import static parsers.LoadGame.loadGame;
+import static parsers.SaveGame.saveGame;
 
 public class FlappyBird implements ActionListener, KeyListener {
 
@@ -22,6 +26,10 @@ public class FlappyBird implements ActionListener, KeyListener {
     private static final int windowHeight = 800;
     private static final int floorHeight  = 100;
     private static final int pipeSpacing  = 60;
+    private final int birdXStart = 200;
+    private final int birdYStart = 200;
+    private final int pipeMinHeight = 350;
+    private final int pipeMaxHeight = 0;
 
     /**
      * Variables
@@ -39,6 +47,13 @@ public class FlappyBird implements ActionListener, KeyListener {
     public int getWindowHeight() { return windowHeight; }
     public int getFloorHeight()  { return floorHeight; }
     public int getWindowWidth()  { return windowWidth; }
+    public int getHighScore() { return highScore; }
+    public int getScore() { return score; }
+
+    /**
+     *  Setters
+     */
+    public void setScore(int s) { score = s; }
 
     /**
      * Declarations
@@ -52,7 +67,7 @@ public class FlappyBird implements ActionListener, KeyListener {
     /**
      * Constructor
      */
-    private FlappyBird(int highScore) {
+    public FlappyBird(int highScore) {
         JFrame jFrame = new JFrame();
         Timer timer = new Timer(20, this);
         render = new Render();
@@ -65,7 +80,7 @@ public class FlappyBird implements ActionListener, KeyListener {
         jFrame.setTitle("Flappy Bird");
         jFrame.setVisible(true);
 
-        bird = new Bird();
+        bird = new Bird(birdXStart, birdYStart);
         background = new Background();
         pipeList = new ArrayList<>();
         this.highScore = highScore;
@@ -126,7 +141,11 @@ public class FlappyBird implements ActionListener, KeyListener {
 
             // add new pipe every pipeSpacing ticks
             if (ticks % pipeSpacing == 0) {
-                pipeList.add(new Pipe());
+                Random rand = new Random();
+
+                int px = windowWidth;
+                int py = rand.nextInt(windowHeight - pipeMinHeight) + pipeMaxHeight;
+                addPipe(px, py);
             }
         }
 
@@ -134,30 +153,45 @@ public class FlappyBird implements ActionListener, KeyListener {
         render.repaint();
     }
 
-    // REQUIRES: key pressed: spacebar
+    // REQUIRES: key pressed
     // MODIFIES: this
-    // EFFECTS: causes bird to jump on spacebar hit
+    // EFFECTS: changes game state based on key pressed
     @Override
-    public void keyTyped(KeyEvent e) {
-    }
-
+    public void keyTyped(KeyEvent e) { }
     @Override
-    public void keyPressed(KeyEvent e) {
-    }
-
+    public void keyPressed(KeyEvent e) { }
     @Override
     public void keyReleased(KeyEvent e) {
         int keyCode = e.getKeyCode();
 
         // jump by pressing spacebar
-        if (keyCode == KeyEvent.VK_SPACE && !gameOver) {
-            gameStarted = true;
+        if (keyCode == KeyEvent.VK_SPACE && !gameOver && gameStarted) {
             bird.jump();
         }
 
         // reset game if game is over by pressing Y
         if (keyCode == KeyEvent.VK_Y && gameOver) {
             flappyBird.reset();;
+        }
+
+        // pause game when p is pressed
+        if (keyCode == KeyEvent.VK_P && gameStarted && !gameOver) {
+            gameStarted = false;
+        }
+
+        // unpause game with spacebar
+        if (keyCode == KeyEvent.VK_SPACE && !gameStarted && !gameOver) {
+            gameStarted = true;
+        }
+
+        // save game when enter is pressed
+        if (keyCode == KeyEvent.VK_ENTER && !gameStarted && !gameOver) {
+            saveGame("src/parsers/saveFile", flappyBird, bird, pipeList);
+        }
+
+        // save game when enter is pressed
+        if (keyCode == KeyEvent.VK_BACK_SPACE && !gameStarted && !gameOver) {
+            flappyBird = loadGame("src/parsers/saveFile");
         }
     }
 
@@ -178,16 +212,26 @@ public class FlappyBird implements ActionListener, KeyListener {
         g.setColor(Color.white);
         g.setFont(new Font("Arial", 1, 20));
         g.drawString("HIGH SCORE: " + highScore, windowWidth - 200, 20);
+        g.drawString("PRESS P TO PAUSE", 0, 20);
         // place score at top centre of screen
         g.setFont(new Font("Arial", 1, 80));
         g.drawString("" + score, windowWidth/2 - 30, 70);
         // game over message
         if (gameOver) {
+            g.setFont(new Font("Arial", 1, 80));
             g.drawString("GAME OVER", 50, windowHeight / 2 - 50);
+            g.setFont(new Font("Arial", 1, 20));
+            g.drawString("PLAY AGAIN? Y/N", 200, windowHeight/2);
         }
         // beginning message
         if (!gameStarted) {
-            g.drawString("PRESS SPACE", 10, windowHeight / 2 - 50);
+            g.setFont(new Font("Arial", 1, 80));
+            g.drawString("FLAPPY BIRD", 30, windowHeight / 2 - 50);
+            g.setFont(new Font("Arial", 1, 20));
+            g.drawString("PRESS SPACE TO START", 170, windowHeight/2);
+            g.drawString("PRESS ENTER WHEN PAUSED TO SAVE", 100, windowHeight/2+ 40);
+            g.drawString("PRESS BACKSPACE WHEN PAUSED TO LOAD", 80, windowHeight/2 + 80);
+
         }
     }
 
@@ -195,7 +239,7 @@ public class FlappyBird implements ActionListener, KeyListener {
     // EFFECTS: returns true if bird successfully passes through a set of pipes
     private boolean passPipe(Pipe pipe) { return bird.getX() == pipe.getX() + pipe.getPipeWidth(); }
 
-    // REQUIRES: game over
+    // REQUIRES: gameOver = true
     // MODIFIES: all
     // EFFECTS:  resets game back to beginning, records new high score
     public void reset() {
@@ -207,10 +251,25 @@ public class FlappyBird implements ActionListener, KeyListener {
         flappyBird = new FlappyBird(highScore);
     }
 
+    //EFFECTS: adds new pipe to pipeList at x, y values
+    public void addPipe(int x, int y) {
+        pipeList.add(new Pipe(x, y));
+    }
+
+    // EFFECTS: creates new bird at x, y, with velocity dy
+    public void newBird(int x, int y, int dy) {
+        bird.setX(x);
+        bird.setY(y);
+        bird.setDY(dy);
+    }
+
 
     // EFFECTS: main function for FlappyBird
     public static void main(String[] args) {
         flappyBird = new FlappyBird(0);
+        String gameData = "";
+        gameData += Integer.toString(-10);
+        System.out.println(gameData);
     }
 
 
